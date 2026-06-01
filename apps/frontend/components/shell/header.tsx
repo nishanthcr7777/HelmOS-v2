@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useParams, useRouter } from "next/navigation";
 
 export function Header() {
@@ -64,15 +65,17 @@ export function Header() {
         </Select>
         <FounderStateBar />
       </div>
-      <Link
-        href={`/workspace/${workspaceId}/inbox`}
-        className="flex shrink-0 items-center gap-2 text-sm"
-      >
-        <span className="text-muted-foreground">Attention</span>
-        {openCount > 0 && (
-          <Badge className="bg-amber-500/90 text-primary-foreground tabular-nums">{openCount}</Badge>
-        )}
-      </Link>
+      <div className="flex shrink-0 items-center gap-3">
+        <Link href={`/workspace/${workspaceId}/inbox`} className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Attention</span>
+          {openCount > 0 && (
+            <Badge className="bg-amber-500 text-white tabular-nums dark:bg-amber-500/90 dark:text-primary-foreground">
+              {openCount}
+            </Badge>
+          )}
+        </Link>
+        <ThemeToggle />
+      </div>
     </header>
   );
 }
