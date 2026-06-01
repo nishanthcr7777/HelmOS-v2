@@ -6,6 +6,7 @@ node_modules/
 
 # pnpm
 pnpm-debug.log*
+apps/frontend/pnpm-lock.yaml
 
 # Environment & secrets
 .env
