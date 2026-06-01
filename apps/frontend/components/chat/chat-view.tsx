@@ -123,7 +123,7 @@ export function ChatView() {
                   </Badge>
                 )}
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
@@ -141,7 +141,7 @@ export function ChatView() {
           {streaming && streamContent && (
             <div className="flex justify-start">
               <div className="max-w-[85%] rounded-lg border border-border bg-card px-4 py-3">
-                <div className="prose prose-invert prose-sm max-w-none">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamContent}</ReactMarkdown>
                 </div>
               </div>

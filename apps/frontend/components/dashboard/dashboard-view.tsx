@@ -136,9 +136,9 @@ export function DashboardView() {
                   <AlertTriangle
                     className={cn(
                       "mt-0.5 h-4 w-4 shrink-0",
-                      alert.alert_type === "conflict" && "text-orange-400",
-                      alert.alert_type === "risky_assumption" && "text-amber-400",
-                      alert.alert_type === "low_confidence" && "text-red-400"
+                      alert.alert_type === "conflict" && "text-orange-600 dark:text-orange-400",
+                      alert.alert_type === "risky_assumption" && "text-amber-600 dark:text-amber-400",
+                      alert.alert_type === "low_confidence" && "text-red-600 dark:text-red-400"
                     )}
                   />
                   <div>
@@ -160,7 +160,7 @@ export function DashboardView() {
                   href={`/workspace/${opp.workspace_id}/research`}
                   className="flex gap-3 rounded-lg border border-border bg-card/50 p-3 transition-colors hover:border-emerald-500/30"
                 >
-                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <div>
                     <p className="text-sm font-medium">{opp.title}</p>
                     <p className="text-xs text-muted-foreground">

@@ -55,7 +55,7 @@ export function AgentCard({
         <p className="line-clamp-2 text-muted-foreground">{agent.recommendation}</p>
         {agent.risks.length > 0 && (
           <p className="text-xs">
-            <span className="font-medium text-amber-400">Risks: </span>
+            <span className="font-medium text-amber-600 dark:text-amber-400">Risks: </span>
             {agent.risks.slice(0, 2).join("; ")}
           </p>
         )}

@@ -13,10 +13,10 @@ export function ConfidenceLabel({
   const label = confidenceLabel(value);
   const tone =
     label === "Low"
-      ? "text-amber-400"
+      ? "text-amber-600 dark:text-amber-400"
       : label === "Moderate"
-        ? "text-blue-400"
-        : "text-emerald-400";
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-emerald-600 dark:text-emerald-400";
 
   return (
     <span className={cn("text-xs", className)}>

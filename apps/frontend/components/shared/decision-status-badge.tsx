@@ -3,10 +3,10 @@ import type { DecisionStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const styles: Record<DecisionStatus, string> = {
-  open: "border-blue-500/40 text-blue-400",
-  pursuing: "border-emerald-500/40 text-emerald-400",
-  deferred: "border-amber-500/40 text-amber-400",
-  rejected: "border-red-500/40 text-red-400",
+  open: "border-blue-500/40 text-blue-600 dark:text-blue-400",
+  pursuing: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
+  deferred: "border-amber-500/40 text-amber-600 dark:text-amber-400",
+  rejected: "border-red-500/40 text-red-600 dark:text-red-400",
   resolved: "border-muted-foreground/40 text-muted-foreground",
 };
 

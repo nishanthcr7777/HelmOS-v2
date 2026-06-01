@@ -31,7 +31,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
         )}
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <p className="text-xs font-semibold uppercase text-amber-400">Risks</p>
+            <p className="text-xs font-semibold uppercase text-amber-600 dark:text-amber-400">Risks</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
               {synthesis.risks.map((r, i) => (
                 <li key={i}>{r}</li>

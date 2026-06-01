@@ -18,7 +18,9 @@ export function ConfidenceBreakdown({
       </div>
       <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">Evidence</span>
-        <span className="font-medium text-emerald-400">{Math.round(evidenceScore * 100)}%</span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+          {Math.round(evidenceScore * 100)}%
+        </span>
       </div>
       <div className="flex justify-between gap-4">
         <UnknownsBadge level={unknownsLevel} />

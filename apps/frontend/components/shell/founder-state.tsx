@@ -31,7 +31,7 @@ export function FounderStateBar() {
           <span
             className={cn(
               "font-medium tabular-nums",
-              item.label === "Blocked" && Number(item.value) > 0 && "text-amber-400"
+              item.label === "Blocked" && Number(item.value) > 0 && "text-amber-600 dark:text-amber-400"
             )}
           >
             {item.value}
