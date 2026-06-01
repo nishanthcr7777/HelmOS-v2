@@ -1,0 +1,105 @@
+from dataclasses import dataclass
+from datetime import datetime, timezone
+
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.models import MemoryChunk
+from llm.openrouter import embed_text
+
+
+@dataclass
+class RetrievedChunk:
+    id: str
+    content: str
+    summary: str | None
+    chunk_type: str
+    source_url: str | None
+    score: float
+
+
+class MemoryService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def search(
+        self,
+        query: str,
+        workspace_id: str,
+        project_id: str | None = None,
+        limit: int = 10,
+    ) -> list[RetrievedChunk]:
+        embedding = await embed_text(query)
+        if embedding:
+            return await self._vector_search(embedding, workspace_id, project_id, limit)
+        return await self._text_fallback(query, workspace_id, project_id, limit)
+
+    async def _vector_search(
+        self,
+        embedding: list[float],
+        workspace_id: str,
+        project_id: str | None,
+        limit: int,
+    ) -> list[RetrievedChunk]:
+        vec = "[" + ",".join(str(x) for x in embedding) + "]"
+        sql = """
+            SELECT id, content, summary, chunk_type, source_url, created_at,
+                   (1 - (embedding <=> :q::vector)) AS similarity
+            FROM memory_chunks
+            WHERE workspace_id = :ws AND embedding IS NOT NULL
+        """
+        params: dict = {"q": vec, "ws": workspace_id, "lim": limit * 2}
+        if project_id:
+            sql += " AND project_id = :pid"
+            params["pid"] = project_id
+        sql += " ORDER BY embedding <=> :q::vector LIMIT :lim"
+
+        rows = (await self.session.execute(text(sql), params)).mappings().all()
+        scored: list[RetrievedChunk] = []
+        now = datetime.now(timezone.utc)
+        for row in rows:
+            created = row["created_at"]
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            age_days = max(0, (now - created).days)
+            recency = max(0.0, 1.0 - age_days / 90.0)
+            sim = float(row["similarity"] or 0)
+            score = sim * 0.7 + recency * 0.3
+            scored.append(
+                RetrievedChunk(
+                    id=str(row["id"]),
+                    content=row["content"],
+                    summary=row["summary"],
+                    chunk_type=row["chunk_type"],
+                    source_url=row["source_url"],
+                    score=score,
+                )
+            )
+        scored.sort(key=lambda c: c.score, reverse=True)
+        return scored[: min(8, limit)]
+
+    async def _text_fallback(
+        self,
+        query: str,
+        workspace_id: str,
+        project_id: str | None,
+        limit: int,
+    ) -> list[RetrievedChunk]:
+        q = select(MemoryChunk).where(MemoryChunk.workspace_id == workspace_id)
+        if project_id:
+            q = q.where(MemoryChunk.project_id == project_id)
+        if query.strip():
+            q = q.where(MemoryChunk.content.ilike(f"%{query[:200]}%"))
+        q = q.order_by(MemoryChunk.created_at.desc()).limit(limit)
+        result = await self.session.execute(q)
+        return [
+            RetrievedChunk(
+                id=str(row.id),
+                content=row.content,
+                summary=row.summary,
+                chunk_type=row.chunk_type,
+                source_url=row.source_url,
+                score=0.5,
+            )
+            for row in result.scalars().all()
+        ]
