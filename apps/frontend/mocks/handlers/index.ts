@@ -3,13 +3,20 @@ import { API_BASE, MOCK_LATENCY_MS } from "@/lib/api/config";
 import {
   boardSessions,
   chatStreamResponse,
-  decisions,
   inboxItems,
   memoryChunks,
   projects,
   researchJobs,
   workspaces,
 } from "../fixtures/data";
+import {
+  dashboardPayload,
+  decisionsEnriched,
+  entityCards,
+  founderState,
+  strategicBeliefs,
+  workspaceProfiles,
+} from "../fixtures/intelligence";
 import type { MemoryChunk, ResearchJob } from "@/lib/types";
 
 const base = API_BASE;
@@ -23,6 +30,37 @@ function sseData(data: object): string {
 }
 
 export const handlers = [
+  http.get(`${base}/dashboard`, async () => {
+    await delay(MOCK_LATENCY_MS);
+    return HttpResponse.json(dashboardPayload);
+  }),
+
+  http.get(`${base}/founder-state`, async () => {
+    await delay(MOCK_LATENCY_MS);
+    return HttpResponse.json(founderState);
+  }),
+
+  http.get(`${base}/workspaces/:id/profile`, async ({ params }) => {
+    await delay(MOCK_LATENCY_MS);
+    const profile = workspaceProfiles[params.id as string];
+    if (!profile) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(profile);
+  }),
+
+  http.get(`${base}/entities`, async ({ request }) => {
+    await delay(MOCK_LATENCY_MS);
+    const workspaceId = new URL(request.url).searchParams.get("workspace_id");
+    const list = entityCards.filter((e) => !workspaceId || e.workspace_id === workspaceId);
+    return HttpResponse.json(list);
+  }),
+
+  http.get(`${base}/beliefs`, async ({ request }) => {
+    await delay(MOCK_LATENCY_MS);
+    const workspaceId = new URL(request.url).searchParams.get("workspace_id");
+    const list = strategicBeliefs.filter((b) => !workspaceId || b.workspace_id === workspaceId);
+    return HttpResponse.json(list);
+  }),
+
   http.get(`${base}/workspaces`, async () => {
     await delay(MOCK_LATENCY_MS);
     return HttpResponse.json(workspaces);
@@ -71,14 +109,14 @@ export const handlers = [
     const url = new URL(request.url);
     const workspaceId = url.searchParams.get("workspace_id");
     const status = url.searchParams.get("status");
-    let list = decisions.filter((d) => !workspaceId || d.workspace_id === workspaceId);
+    let list = decisionsEnriched.filter((d) => !workspaceId || d.workspace_id === workspaceId);
     if (status) list = list.filter((d) => d.status === status);
     return HttpResponse.json(list);
   }),
 
   http.get(`${base}/decisions/:id`, async ({ params }) => {
     await delay(MOCK_LATENCY_MS);
-    const d = decisions.find((x) => x.id === params.id);
+    const d = decisionsEnriched.find((x) => x.id === params.id);
     if (!d) return new HttpResponse(null, { status: 404 });
     return HttpResponse.json(d);
   }),
@@ -86,7 +124,7 @@ export const handlers = [
   http.patch(`${base}/decisions/:id`, async ({ params, request }) => {
     await delay(MOCK_LATENCY_MS);
     const body = (await request.json()) as { status?: string };
-    const d = decisions.find((x) => x.id === params.id);
+    const d = decisionsEnriched.find((x) => x.id === params.id);
     if (!d) return new HttpResponse(null, { status: 404 });
     if (body.status) d.status = body.status as typeof d.status;
     return HttpResponse.json(d);

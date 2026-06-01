@@ -1,12 +1,17 @@
 import { API_BASE } from "./config";
 import type {
   BoardSession,
+  DashboardPayload,
   Decision,
+  EntityCard,
+  FounderState,
   InboxItem,
   MemoryChunk,
   Project,
   ResearchJob,
+  StrategicBelief,
   Workspace,
+  WorkspaceProfile,
 } from "@/lib/types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -22,6 +27,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  getDashboard: () => request<DashboardPayload>("/dashboard"),
+
+  getFounderState: () => request<FounderState>("/founder-state"),
+
+  getWorkspaceProfile: (workspaceId: string) =>
+    request<WorkspaceProfile>(`/workspaces/${workspaceId}/profile`),
+
+  getEntities: (workspaceId: string) =>
+    request<EntityCard[]>(`/entities?workspace_id=${workspaceId}`),
+
+  getBeliefs: (workspaceId: string) =>
+    request<StrategicBelief[]>(`/beliefs?workspace_id=${workspaceId}`),
+
   getWorkspaces: () => request<Workspace[]>("/workspaces"),
 
   getProjects: (workspaceId: string) =>
@@ -54,6 +72,8 @@ export const api = {
     if (!res.ok) throw new Error("Ingest failed");
     return res.json() as Promise<{ status: string; chunk_count: number }>;
   },
+
+  getDecision: (id: string) => request<Decision>(`/decisions/${id}`),
 
   getDecisions: (workspaceId: string, status?: string) => {
     const q = new URLSearchParams({ workspace_id: workspaceId });
