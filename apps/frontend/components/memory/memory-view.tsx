@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
@@ -16,15 +17,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { SectionHeader } from "@/components/shared/section-header";
 import type { ChunkType, MemoryChunk } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
+import { researchAgeLabel } from "@/lib/agent-meta";
 import { Upload } from "lucide-react";
 
-const chunkTypes: ChunkType[] = [
+const noteTypes: ChunkType[] = [
   "strategy_note",
   "research_summary",
   "decision_log",
-  "entity_profile",
   "document_chunk",
 ];
 
@@ -47,6 +49,16 @@ export function MemoryView() {
       }),
   });
 
+  const { data: beliefs = [] } = useQuery({
+    queryKey: ["beliefs", workspaceId],
+    queryFn: () => api.getBeliefs(workspaceId),
+  });
+
+  const { data: entities = [] } = useQuery({
+    queryKey: ["entities", workspaceId],
+    queryFn: () => api.getEntities(workspaceId),
+  });
+
   const addNote = useMutation({
     mutationFn: () =>
       api.createMemoryChunk({
@@ -60,12 +72,7 @@ export function MemoryView() {
     },
   });
 
-  const entities = chunks.reduce<Record<string, MemoryChunk[]>>((acc, c) => {
-    const name = c.entity_name ?? "_ungrouped";
-    if (!acc[name]) acc[name] = [];
-    acc[name].push(c);
-    return acc;
-  }, {});
+  const filteredChunks = chunks.filter((c) => c.chunk_type !== "entity_profile");
 
   async function onFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -81,115 +88,149 @@ export function MemoryView() {
   }
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Memory</h1>
-        <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="secondary">Add Note</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add strategy note</DialogTitle>
-              </DialogHeader>
-              <Textarea
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="Store context for the founder…"
-                rows={5}
-              />
-              <Button onClick={() => addNote.mutate()} disabled={!noteContent.trim()}>
-                Save
-              </Button>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+    <div className="space-y-6 p-4 md:p-6">
+      <SectionHeader
+        title="Organizational knowledge"
+        subtitle="Strategic beliefs, entities, and operational memory"
+      />
 
-      <div className="flex flex-wrap gap-2">
-        <Input
-          placeholder="Search memory…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <div className="flex flex-wrap gap-1">
-          <Button
-            size="sm"
-            variant={typeFilter === "" ? "default" : "outline"}
-            onClick={() => setTypeFilter("")}
-          >
-            All
-          </Button>
-          {chunkTypes.map((t) => (
-            <Button
-              key={t}
-              size="sm"
-              variant={typeFilter === t ? "default" : "outline"}
-              onClick={() => setTypeFilter(t)}
-            >
-              {t.replace("_", " ")}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 hover:bg-accent/50">
-        <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Upload PDF, TXT, or MD</span>
-        <input type="file" className="hidden" accept=".pdf,.txt,.md" onChange={onFileUpload} />
-        {uploadStatus && (
-          <span className="mt-2 text-xs text-primary">Status: {uploadStatus}</span>
-        )}
-      </label>
-
-      <Tabs defaultValue="chunks">
+      <Tabs defaultValue="beliefs">
         <TabsList>
-          <TabsTrigger value="chunks">Chunks</TabsTrigger>
+          <TabsTrigger value="beliefs">Strategic beliefs</TabsTrigger>
           <TabsTrigger value="entities">Entity cards</TabsTrigger>
+          <TabsTrigger value="notes">Notes & documents</TabsTrigger>
         </TabsList>
-        <TabsContent value="chunks" className="mt-4">
+
+        <TabsContent value="beliefs" className="mt-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Founding principles that guide decisions — separate from transient notes.
+          </p>
+          {beliefs.map((b) => (
+            <Card key={b.id} className="border-l-4 border-l-primary/50">
+              <CardContent className="pt-4">
+                <p className="text-sm font-medium">{b.content}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Since {formatDate(b.created_at)}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="entities" className="mt-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            {entities.map((entity) => (
+              <Card key={entity.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base">{entity.name}</CardTitle>
+                    <span className="text-xs uppercase text-muted-foreground">{entity.entity_type}</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <p className="text-muted-foreground">{entity.summary}</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Last researched</span>
+                      <p>
+                        {entity.research_age_days != null
+                          ? researchAgeLabel(entity.research_age_days)
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Confidence</span>
+                      <p className="tabular-nums">{Math.round(entity.confidence * 100)}%</p>
+                    </div>
+                  </div>
+                  {entity.linked_decision_ids.length > 0 && (
+                    <div className="border-t border-border pt-2">
+                      <p className="text-xs text-muted-foreground">Linked decisions</p>
+                      {entity.linked_decision_ids.map((id) => (
+                        <Link
+                          key={id}
+                          href={`/workspace/${workspaceId}/decisions/${id}`}
+                          className="mt-1 block text-xs text-primary hover:underline"
+                        >
+                          View decision →
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-4 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Input
+              placeholder="Search notes…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-xs"
+            />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="secondary">Add note</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add operational note</DialogTitle>
+                </DialogHeader>
+                <Textarea
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                  rows={5}
+                />
+                <Button onClick={() => addNote.mutate()} disabled={!noteContent.trim()}>
+                  Save
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 hover:bg-accent/30">
+            <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Upload PDF, TXT, or MD</span>
+            <input type="file" className="hidden" accept=".pdf,.txt,.md" onChange={onFileUpload} />
+            {uploadStatus && <span className="mt-2 text-xs text-primary">Status: {uploadStatus}</span>}
+          </label>
+
+          <div className="flex flex-wrap gap-1">
+            <Button size="sm" variant={typeFilter === "" ? "default" : "outline"} onClick={() => setTypeFilter("")}>
+              All
+            </Button>
+            {noteTypes.map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant={typeFilter === t ? "default" : "outline"}
+                onClick={() => setTypeFilter(t)}
+              >
+                {t.replace("_", " ")}
+              </Button>
+            ))}
+          </div>
+
           {isLoading ? (
             <p className="text-muted-foreground">Loading…</p>
-          ) : chunks.length === 0 ? (
-            <p className="text-muted-foreground">No memory chunks found.</p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {chunks.map((chunk) => (
+              {filteredChunks.map((chunk: MemoryChunk) => (
                 <Card key={chunk.id}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium capitalize">
+                    <CardTitle className="text-xs font-semibold uppercase text-muted-foreground">
                       {chunk.chunk_type.replace("_", " ")}
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">{formatDate(chunk.created_at)}</p>
                   </CardHeader>
                   <CardContent>
                     <p className="line-clamp-4 text-sm">{chunk.content}</p>
-                    {chunk.entity_name && (
-                      <p className="mt-2 text-xs text-primary">{chunk.entity_name}</p>
-                    )}
+                    <p className="mt-2 text-xs text-muted-foreground">{formatDate(chunk.created_at)}</p>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
-        </TabsContent>
-        <TabsContent value="entities" className="mt-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            {Object.entries(entities)
-              .filter(([name]) => name !== "_ungrouped")
-              .map(([name, list]) => (
-                <Card key={name}>
-                  <CardHeader>
-                    <CardTitle>{name}</CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {list.length} chunks · updated {formatDate(list[0]?.created_at ?? "")}
-                    </p>
-                  </CardHeader>
-                </Card>
-              ))}
-          </div>
         </TabsContent>
       </Tabs>
     </div>
