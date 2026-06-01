@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { useAppStore } from "@/lib/stores/app-store";
 import { AgentCard } from "./agent-card";
+import { AgentInfluenceBar } from "./agent-influence-bar";
 import { SynthesisPanel } from "./synthesis-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +40,10 @@ export function BoardView() {
   if (!session?.synthesis) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-semibold">Board Room</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Run an adversarial review with five agents.</p>
+        <h1 className="text-xl font-semibold">Board review</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Adversarial intelligence report — weighted agent positions with evidence quality.
+        </p>
         <div className="mt-4 flex gap-2">
           <Input
             value={question}
@@ -59,9 +62,11 @@ export function BoardView() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-xl font-semibold">Board Room</h1>
+        <h1 className="text-xl font-semibold">Board review</h1>
         <p className="mt-1 text-sm text-muted-foreground">{session.question}</p>
       </div>
+
+      <AgentInfluenceBar agents={session.agent_outputs} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {session.agent_outputs.map((agent) => (

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerdictBadge } from "@/components/shared/verdict-badge";
-import { ConfidenceLabel } from "@/components/shared/confidence-label";
+import { ConfidenceBreakdown } from "@/components/shared/confidence-breakdown";
 import type { BoardSynthesis } from "@/lib/types";
 
 export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
@@ -8,22 +8,30 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Synthesis</CardTitle>
+          <CardTitle className="text-sm uppercase tracking-wide">Synthesis report</CardTitle>
           <VerdictBadge verdict={synthesis.verdict} />
         </div>
-        <ConfidenceLabel value={synthesis.confidence} showDescription />
+        <div className="mt-3 max-w-xs">
+          <ConfidenceBreakdown
+            confidence={synthesis.confidence}
+            evidenceScore={synthesis.evidence_score}
+            unknownsLevel={synthesis.unknowns_level}
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <p>{synthesis.recommendation}</p>
         {synthesis.next_action && (
-          <p>
-            <span className="font-medium">Next action: </span>
-            {synthesis.next_action}
+          <p className="rounded-md border border-border bg-background/50 p-3">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">
+              Recommended next action
+            </span>
+            <span className="mt-1 block">{synthesis.next_action}</span>
           </p>
         )}
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <p className="font-medium text-amber-400">Risks</p>
+            <p className="text-xs font-semibold uppercase text-amber-400">Risks</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
               {synthesis.risks.map((r, i) => (
                 <li key={i}>{r}</li>
@@ -31,7 +39,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
             </ul>
           </div>
           <div>
-            <p className="font-medium">Unknowns</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Unknowns</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
               {synthesis.unknowns.map((u, i) => (
                 <li key={i}>{u}</li>
@@ -39,7 +47,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
             </ul>
           </div>
           <div>
-            <p className="font-medium">Assumptions</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Assumptions</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
               {synthesis.assumptions.map((a, i) => (
                 <li key={i}>{a}</li>
