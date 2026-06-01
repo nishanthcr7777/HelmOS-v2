@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { useAppStore } from "@/lib/stores/app-store";
+import { FounderStateBar } from "./founder-state";
 import {
   Select,
   SelectContent,
@@ -35,20 +36,23 @@ export function Header() {
   const openCount = inbox.filter((i) => i.status === "open").length;
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-      <div className="flex items-center gap-4">
-        <Link href={`/workspace/${workspaceId}/chat`} className="text-lg font-bold tracking-tight">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-card/30 px-4">
+      <div className="flex min-w-0 items-center gap-4">
+        <Link
+          href={`/workspace/${workspaceId}/dashboard`}
+          className="shrink-0 text-lg font-bold tracking-tight"
+        >
           HELMOS
         </Link>
         <Select
           value={workspaceId}
           onValueChange={(id) => {
             setWorkspaceId(id);
-            router.push(`/workspace/${id}/chat`);
+            router.push(`/workspace/${id}/dashboard`);
           }}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Workspace" />
+          <SelectTrigger className="w-[160px] border-border/80">
+            <SelectValue placeholder="Environment" />
           </SelectTrigger>
           <SelectContent>
             {workspaces.map((w) => (
@@ -58,11 +62,15 @@ export function Header() {
             ))}
           </SelectContent>
         </Select>
+        <FounderStateBar />
       </div>
-      <Link href={`/workspace/${workspaceId}/inbox`} className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Inbox</span>
+      <Link
+        href={`/workspace/${workspaceId}/inbox`}
+        className="flex shrink-0 items-center gap-2 text-sm"
+      >
+        <span className="text-muted-foreground">Attention</span>
         {openCount > 0 && (
-          <Badge className="bg-primary text-primary-foreground">{openCount}</Badge>
+          <Badge className="bg-amber-500/90 text-primary-foreground tabular-nums">{openCount}</Badge>
         )}
       </Link>
     </header>
