@@ -10,17 +10,18 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). MSW mocks the API by default (`NEXT_PUBLIC_USE_MSW=true`).
+Open [http://localhost:3000](http://localhost:3000) — lands on **Dashboard** (mission control). MSW mocks the API by default (`NEXT_PUBLIC_USE_MSW=true`).
 
 ### Workspaces
 
-- Clawback Labs — `/workspace/clawback-labs/chat`
-- NexOps — `/workspace/nexops/chat`
+- Clawback Labs — `/workspace/clawback-labs/dashboard`
+- NexOps — `/workspace/nexops/dashboard`
 
 ### Keyboard shortcuts
 
-- `Cmd/Ctrl+K` — Chat
-- `Cmd/Ctrl+B` — Board Room
+- `Cmd/Ctrl+D` — Dashboard
+- `Cmd/Ctrl+B` — Board review
 - `Cmd/Ctrl+R` — Research
+- `Cmd/Ctrl+I` — Inbox / Attention
 
 See [apps/frontend/docs/api-contract.md](apps/frontend/docs/api-contract.md) for API shapes (Plan 3 wiring).

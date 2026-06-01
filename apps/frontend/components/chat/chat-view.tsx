@@ -93,7 +93,9 @@ export function ChatView() {
         <div className="mx-auto max-w-3xl space-y-4 py-4" role="log" aria-live="polite" aria-label="Chat messages">
           {messages.length === 0 && !streaming && (
             <div className="rounded-lg border border-dashed border-border p-8 text-center">
-              <p className="text-muted-foreground">Ask anything about your workspace context.</p>
+              <p className="text-muted-foreground">
+                Intelligence brief — query stored context when dashboard signals need depth.
+              </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {prompts.map((p) => (
                   <Button key={p} variant="outline" size="sm" onClick={() => sendMessage(p)}>
@@ -152,7 +154,7 @@ export function ChatView() {
       <div className="shrink-0 border-t border-border bg-background p-4">
         <div className="mx-auto flex max-w-3xl flex-col gap-2">
           <Textarea
-            placeholder="Ask HelmOS… (Cmd+K to focus)"
+            placeholder="Intelligence query… (not the default starting point)"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {

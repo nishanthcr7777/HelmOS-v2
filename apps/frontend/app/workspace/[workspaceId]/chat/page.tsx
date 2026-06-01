@@ -1,9 +1,9 @@
-import { ChatView } from "@/components/chat/chat-view";
+import { redirect } from "next/navigation";
 
-export default function ChatPage() {
-  return (
-    <div className="h-full min-h-0">
-      <ChatView />
-    </div>
-  );
+export default function ChatRedirect({
+  params,
+}: {
+  params: { workspaceId: string };
+}) {
+  redirect(`/workspace/${params.workspaceId}/brief`);
 }

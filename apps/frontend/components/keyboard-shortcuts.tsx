@@ -13,9 +13,9 @@ export function KeyboardShortcuts() {
       if (!(e.metaKey || e.ctrlKey) || !workspaceId) return;
       const base = `/workspace/${workspaceId}`;
       switch (e.key.toLowerCase()) {
-        case "k":
+        case "d":
           e.preventDefault();
-          router.push(`${base}/chat`);
+          router.push(`${base}/dashboard`);
           break;
         case "b":
           e.preventDefault();
@@ -24,6 +24,10 @@ export function KeyboardShortcuts() {
         case "r":
           e.preventDefault();
           router.push(`${base}/research`);
+          break;
+        case "i":
+          e.preventDefault();
+          router.push(`${base}/inbox`);
           break;
       }
     }
