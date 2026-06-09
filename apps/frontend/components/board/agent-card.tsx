@@ -27,6 +27,10 @@ export function AgentCard({
   const risks = asStringList(agent.risks);
   const unknowns = asStringList(agent.unknowns);
   const assumptions = asStringList(agent.key_assumptions);
+  const evidenceFor = asStringList(agent.evidence_for);
+  const evidenceAgainst = asStringList(agent.evidence_against);
+  const evidenceGaps = asStringList(agent.evidence_gaps);
+  const isResearcher = agent.agent === "researcher";
 
   return (
     <Card className={cn("border-border/80", loading && "opacity-60")}>
@@ -60,6 +64,24 @@ export function AgentCard({
           </span>
         </div>
         <p className="line-clamp-2 text-muted-foreground">{agent.recommendation}</p>
+        {isResearcher && evidenceFor.length > 0 && (
+          <p className="text-xs text-emerald-700 dark:text-emerald-400">
+            <span className="font-medium">For: </span>
+            {evidenceFor.slice(0, 2).join("; ")}
+          </p>
+        )}
+        {isResearcher && evidenceAgainst.length > 0 && (
+          <p className="text-xs text-red-700 dark:text-red-400">
+            <span className="font-medium">Against: </span>
+            {evidenceAgainst.slice(0, 2).join("; ")}
+          </p>
+        )}
+        {isResearcher && evidenceGaps.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">Gaps: </span>
+            {evidenceGaps.slice(0, 2).join("; ")}
+          </p>
+        )}
         {risks.length > 0 && (
           <p className="text-xs">
             <span className="font-medium text-amber-600 dark:text-amber-400">Risks: </span>

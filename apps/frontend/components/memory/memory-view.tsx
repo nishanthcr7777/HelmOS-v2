@@ -109,6 +109,19 @@ export function MemoryView() {
             <Card key={b.id} className="border-l-4 border-l-primary/50">
               <CardContent className="pt-4">
                 <p className="text-sm font-medium">{b.content}</p>
+                {b.confidence != null && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Confidence {Math.round(b.confidence * 100)}%
+                    {b.rationale ? ` · ${b.rationale}` : ""}
+                  </p>
+                )}
+                {b.override_conditions && b.override_conditions.length > 0 && (
+                  <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground">
+                    {b.override_conditions.map((c, i) => (
+                      <li key={i}>Override when: {c}</li>
+                    ))}
+                  </ul>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">Since {formatDate(b.created_at)}</p>
               </CardContent>
             </Card>

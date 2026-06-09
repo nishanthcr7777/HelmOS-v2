@@ -62,8 +62,11 @@ export function ContextTracePanel({ trace }: { trace?: ContextTrace }) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          {trace.agent_context_chars?.toLocaleString() ?? 0} chars · ~
-          {trace.agent_context_tokens?.toLocaleString() ?? 0} tokens
+          Memory: {mem?.retrieved_chunks_count ?? 0} · Entities: {trace.entities_count ?? 0} ·
+          Decisions: {trace.decisions_injected ?? 0} · Sessions:{" "}
+          {trace.board_sessions_injected ?? 0} · Research:{" "}
+          {trace.research_sources_count ?? trace.research?.research_sources_count ?? 0} · ~
+          {trace.agent_context_tokens?.toLocaleString() ?? 0} context tokens
         </p>
       </CardHeader>
       {open && (
@@ -82,6 +85,18 @@ export function ContextTracePanel({ trace }: { trace?: ContextTrace }) {
           />
           <StatusRow label="Workspace profile?" count={trace.profile_lines_count ?? 0} />
           <StatusRow label="Beliefs (system prompt)" count={trace.beliefs_count ?? 0} />
+          <StatusRow
+            label="Research sources?"
+            count={trace.research_sources_count ?? trace.research?.research_sources_count ?? 0}
+            detail={
+              trace.research?.skipped_reason
+                ? `Skipped: ${trace.research.skipped_reason}`
+                : trace.research?.tavily_hits != null
+                  ? `Tavily ${trace.research.tavily_hits} · Firecrawl ${trace.research.firecrawl_pages ?? 0}`
+                  : undefined
+            }
+            warn
+          />
 
           {mem?.chunk_ids && mem.chunk_ids.length > 0 && (
             <div>

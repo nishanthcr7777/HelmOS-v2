@@ -62,6 +62,9 @@ export interface AgentOutput {
   research_age_days: number;
   evidence_score: number;
   evidence_used: EvidenceSource[];
+  evidence_for?: string[];
+  evidence_against?: string[];
+  evidence_gaps?: string[];
   key_assumptions: string[];
   risks: string[];
   unknowns: string[];
@@ -80,6 +83,15 @@ export interface ContextTraceMemory {
   chunk_ids: string[];
 }
 
+export interface ContextTraceResearch {
+  research_sources_count?: number;
+  tavily_hits?: number;
+  firecrawl_pages?: number;
+  queries?: string[];
+  skipped_reason?: string | null;
+  source_urls?: string[];
+}
+
 export interface ContextTrace {
   beliefs_count: number;
   profile_lines_count: number;
@@ -89,6 +101,8 @@ export interface ContextTrace {
   memory: ContextTraceMemory;
   agent_context_chars: number;
   agent_context_tokens: number;
+  research_sources_count?: number;
+  research?: ContextTraceResearch;
 }
 
 export interface BoardSynthesis {
@@ -138,6 +152,9 @@ export interface StrategicBelief {
   id: string;
   workspace_id: string;
   content: string;
+  confidence?: number;
+  rationale?: string;
+  override_conditions?: string[];
   created_at: string;
 }
 
