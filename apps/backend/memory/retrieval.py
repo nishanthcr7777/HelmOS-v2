@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -6,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import MemoryChunk
 from llm.openrouter import embed_text
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -18,6 +21,17 @@ class RetrievedChunk:
     score: float
 
 
+@dataclass
+class MemorySearchResult:
+    chunks: list[RetrievedChunk]
+    retrieved_chunks_count: int
+    vector_hits: int
+    text_hits: int
+    used_vector: bool
+    used_text_fallback: bool
+    used_recent_fallback: bool
+
+
 class MemoryService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -28,11 +42,49 @@ class MemoryService:
         workspace_id: str,
         project_id: str | None = None,
         limit: int = 10,
-    ) -> list[RetrievedChunk]:
+    ) -> MemorySearchResult:
+        vector_hits = 0
+        text_hits = 0
+        used_vector = False
+        used_text_fallback = False
+        used_recent_fallback = False
+        chunks: list[RetrievedChunk] = []
+
         embedding = await embed_text(query)
         if embedding:
-            return await self._vector_search(embedding, workspace_id, project_id, limit)
-        return await self._text_fallback(query, workspace_id, project_id, limit)
+            chunks = await self._vector_search(embedding, workspace_id, project_id, limit)
+            vector_hits = len(chunks)
+            used_vector = vector_hits > 0
+
+        if not chunks:
+            chunks = await self._text_fallback(query, workspace_id, project_id, limit)
+            text_hits = len(chunks)
+            used_text_fallback = text_hits > 0
+
+        if not chunks:
+            chunks = await self._recent_chunks_fallback(workspace_id, project_id, limit)
+            used_recent_fallback = len(chunks) > 0
+
+        logger.info(
+            "memory_search workspace=%s retrieved_chunks_count=%d vector_hits=%d text_hits=%d "
+            "used_text_fallback=%s used_recent_fallback=%s",
+            workspace_id,
+            len(chunks),
+            vector_hits,
+            text_hits,
+            used_text_fallback,
+            used_recent_fallback,
+        )
+
+        return MemorySearchResult(
+            chunks=chunks,
+            retrieved_chunks_count=len(chunks),
+            vector_hits=vector_hits,
+            text_hits=text_hits,
+            used_vector=used_vector,
+            used_text_fallback=used_text_fallback,
+            used_recent_fallback=used_recent_fallback,
+        )
 
     async def _vector_search(
         self,
@@ -100,6 +152,29 @@ class MemoryService:
                 chunk_type=row.chunk_type,
                 source_url=row.source_url,
                 score=0.5,
+            )
+            for row in result.scalars().all()
+        ]
+
+    async def _recent_chunks_fallback(
+        self,
+        workspace_id: str,
+        project_id: str | None,
+        limit: int,
+    ) -> list[RetrievedChunk]:
+        q = select(MemoryChunk).where(MemoryChunk.workspace_id == workspace_id)
+        if project_id:
+            q = q.where(MemoryChunk.project_id == project_id)
+        q = q.order_by(MemoryChunk.created_at.desc()).limit(limit)
+        result = await self.session.execute(q)
+        return [
+            RetrievedChunk(
+                id=str(row.id),
+                content=row.content,
+                summary=row.summary,
+                chunk_type=row.chunk_type,
+                source_url=row.source_url,
+                score=0.3,
             )
             for row in result.scalars().all()
         ]
