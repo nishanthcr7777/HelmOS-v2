@@ -44,7 +44,7 @@ class MemoryService:
         vec = "[" + ",".join(str(x) for x in embedding) + "]"
         sql = """
             SELECT id, content, summary, chunk_type, source_url, created_at,
-                   (1 - (embedding <=> :q::vector)) AS similarity
+                   (1 - (embedding <=> CAST(:q AS vector))) AS similarity
             FROM memory_chunks
             WHERE workspace_id = :ws AND embedding IS NOT NULL
         """
@@ -52,7 +52,7 @@ class MemoryService:
         if project_id:
             sql += " AND project_id = :pid"
             params["pid"] = project_id
-        sql += " ORDER BY embedding <=> :q::vector LIMIT :lim"
+        sql += " ORDER BY embedding <=> CAST(:q AS vector) LIMIT :lim"
 
         rows = (await self.session.execute(text(sql), params)).mappings().all()
         scored: list[RetrievedChunk] = []

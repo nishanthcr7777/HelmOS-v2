@@ -70,7 +70,7 @@ async def ingest_pdf_bytes(
 
             vec = "[" + ",".join(str(x) for x in emb) + "]"
             await session.execute(
-                text("UPDATE memory_chunks SET embedding = :e::vector WHERE id = :id"),
+                text("UPDATE memory_chunks SET embedding = CAST(:e AS vector) WHERE id = :id"),
                 {"e": vec, "id": chunk.id},
             )
         count += 1
@@ -105,7 +105,7 @@ async def create_note_chunk(
         from sqlalchemy import text
 
         await session.execute(
-            text("UPDATE memory_chunks SET embedding = :e::vector WHERE id = :id"),
+            text("UPDATE memory_chunks SET embedding = CAST(:e AS vector) WHERE id = :id"),
             {"e": vec, "id": chunk.id},
         )
     return chunk
