@@ -7,11 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from agents.base import AGENT_NAMES, run_agent
 from agents.board_modes import BoardMode
+from agents.researcher import run_researcher_agent
 from agents.synthesizer import synthesize_board
 from beliefs.service import BeliefService
 from db.models import BoardSession, Decision, InboxItem
 from memory.retrieval import MemoryService
 from orchestrator.context_builder import build_board_context
+from research.board_evidence import gather_board_evidence
 
 
 def _as_float(value: object, default: float = 0.5) -> float:
@@ -38,6 +40,9 @@ async def run_board_session(
     memory_result = await MemoryService(session).search(
         question, workspace_id, project_id=project_id, limit=8
     )
+
+    evidence_packet = await gather_board_evidence(session, question, workspace_id)
+
     board_ctx = await build_board_context(
         session,
         workspace_id,
@@ -45,8 +50,9 @@ async def run_board_session(
         project_id,
         memory_result,
         beliefs_count=len(beliefs_list),
+        research_trace=evidence_packet.to_trace(),
     )
-    context = board_ctx.text
+    shared_context = board_ctx.text
 
     board = BoardSession(
         workspace_id=workspace_id,
@@ -58,11 +64,16 @@ async def run_board_session(
     session.add(board)
     await session.flush()
 
-    tasks = [
-        run_agent(name, question, context, beliefs_block, board_mode=board_mode)
-        for name in AGENT_NAMES
-    ]
-    outputs: list[dict[str, Any]] = list(await asyncio.gather(*tasks))
+    async def _run_one(name: str) -> dict[str, Any]:
+        if name == "researcher":
+            return await run_researcher_agent(question, evidence_packet, board_mode=board_mode)
+        return await run_agent(
+            name, question, shared_context, beliefs_block, board_mode=board_mode
+        )
+
+    outputs: list[dict[str, Any]] = list(
+        await asyncio.gather(*[_run_one(name) for name in AGENT_NAMES])
+    )
 
     synthesis = await synthesize_board(question, outputs, beliefs_block, board_mode=board_mode)
     board.agent_outputs = outputs

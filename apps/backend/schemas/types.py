@@ -34,14 +34,21 @@ class StrategicBeliefOut(BaseModel):
     id: str
     workspace_id: str
     content: str
+    confidence: float = 0.8
+    rationale: str | None = None
+    override_conditions: list[str] = Field(default_factory=list)
     created_at: str
 
     @classmethod
     def from_row(cls, row: Any) -> "StrategicBeliefOut":
+        overrides = row.override_conditions if hasattr(row, "override_conditions") else []
         return cls(
             id=str(row.id),
             workspace_id=row.workspace_id,
             content=row.content,
+            confidence=float(getattr(row, "confidence", 0.8) or 0.8),
+            rationale=getattr(row, "rationale", None),
+            override_conditions=list(overrides or []),
             created_at=_dt(row.created_at),
         )
 

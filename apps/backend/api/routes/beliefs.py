@@ -11,12 +11,18 @@ router = APIRouter(prefix="/beliefs", tags=["beliefs"])
 class BeliefCreate(BaseModel):
     workspace_id: str
     content: str
+    confidence: float = 0.8
+    rationale: str | None = None
+    override_conditions: list[str] | None = None
 
 
 class BeliefPatch(BaseModel):
     content: str | None = None
     sort_order: int | None = None
     status: str | None = None
+    confidence: float | None = None
+    rationale: str | None = None
+    override_conditions: list[str] | None = None
 
 
 @router.get("")
@@ -29,7 +35,13 @@ async def list_beliefs(workspace_id: str, db: DbSession):
 @router.post("", status_code=201)
 async def create_belief(body: BeliefCreate, db: DbSession):
     svc = BeliefService(db)
-    belief = await svc.create(body.workspace_id, body.content)
+    belief = await svc.create(
+        body.workspace_id,
+        body.content,
+        confidence=body.confidence,
+        rationale=body.rationale,
+        override_conditions=body.override_conditions,
+    )
     return StrategicBeliefOut.from_row(belief)
 
 
@@ -41,6 +53,9 @@ async def patch_belief(belief_id: str, body: BeliefPatch, db: DbSession):
         content=body.content,
         sort_order=body.sort_order,
         status=body.status,
+        confidence=body.confidence,
+        rationale=body.rationale,
+        override_conditions=body.override_conditions,
     )
     if not belief:
         raise HTTPException(404, "Belief not found")

@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     embedding_model: str = "openai/text-embedding-3-small"
     chat_model: str = "openai/gpt-4o-mini"
 
+    # Board agent models — JSON map e.g. {"researcher":"anthropic/claude-sonnet-4"}
+    board_agent_models: str = ""
+    board_agent_model_researcher: str = ""
+    board_agent_model_skeptic: str = ""
+    board_agent_model_operator: str = ""
+    board_agent_model_sales: str = ""
+    board_agent_model_cto: str = ""
+    board_agent_model_synthesizer: str = ""
+
     storage_bucket: str = "helmos-files"
 
     @property

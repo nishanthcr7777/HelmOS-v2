@@ -37,6 +37,7 @@ def _truncate_sections(sections: list[tuple[str, str]], max_chars: int) -> str:
         "## Recent decisions",
         "## Prior board sessions",
     ]
+    # Research evidence packet is researcher-only — not included in shared agent context.
 
     def build(active: list[tuple[str, str]]) -> str:
         return "\n\n".join(body for _, body in active if body.strip())
@@ -68,6 +69,7 @@ async def build_board_context(
     project_id: str | None,
     memory_result: MemorySearchResult,
     beliefs_count: int,
+    research_trace: dict | None = None,
 ) -> BoardContext:
     profile_lines_count = 0
     entities_count = 0
@@ -186,6 +188,8 @@ async def build_board_context(
         },
         "agent_context_chars": agent_context_chars,
         "agent_context_tokens": agent_context_tokens,
+        "research_sources_count": (research_trace or {}).get("research_sources_count", 0),
+        "research": research_trace or {},
     }
 
     return BoardContext(text=text, trace=trace)

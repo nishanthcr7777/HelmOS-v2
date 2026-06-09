@@ -19,12 +19,23 @@ class BeliefService:
         )
         return list(result.scalars().all())
 
-    async def create(self, workspace_id: str, content: str) -> StrategicBelief:
+    async def create(
+        self,
+        workspace_id: str,
+        content: str,
+        *,
+        confidence: float = 0.8,
+        rationale: str | None = None,
+        override_conditions: list[str] | None = None,
+    ) -> StrategicBelief:
         beliefs = await self.list_active(workspace_id)
         belief = StrategicBelief(
             workspace_id=workspace_id,
             content=content,
             sort_order=len(beliefs) + 1,
+            confidence=confidence,
+            rationale=rationale,
+            override_conditions=list(override_conditions or []),
         )
         self.session.add(belief)
         await self.session.flush()
@@ -37,6 +48,9 @@ class BeliefService:
         content: str | None = None,
         sort_order: int | None = None,
         status: str | None = None,
+        confidence: float | None = None,
+        rationale: str | None = None,
+        override_conditions: list[str] | None = None,
     ) -> StrategicBelief | None:
         from uuid import UUID
 
@@ -52,6 +66,12 @@ class BeliefService:
             belief.sort_order = sort_order
         if status is not None:
             belief.status = status
+        if confidence is not None:
+            belief.confidence = confidence
+        if rationale is not None:
+            belief.rationale = rationale
+        if override_conditions is not None:
+            belief.override_conditions = list(override_conditions)
         await self.session.flush()
         return belief
 
@@ -72,5 +92,21 @@ class BeliefService:
         beliefs = await self.list_active(workspace_id)
         if not beliefs:
             return ""
-        lines = [f"- {b.content}" for b in beliefs]
-        return "## Strategic beliefs (founding doctrine)\n" + "\n".join(lines)
+        lines = [
+            "Beliefs are heuristics — not immutable laws.",
+            "Evaluate whether override conditions justify an exception before applying a belief.",
+            "",
+        ]
+        for b in beliefs:
+            conf = getattr(b, "confidence", 0.8) or 0.8
+            block = [f"- Belief: {b.content}", f"  Confidence: {conf:.2f}"]
+            rationale = getattr(b, "rationale", None)
+            if rationale:
+                block.append(f"  Rationale: {rationale}")
+            overrides = getattr(b, "override_conditions", None) or []
+            if overrides:
+                block.append("  Override when:")
+                for cond in overrides:
+                    block.append(f"    · {cond}")
+            lines.extend(block)
+        return "## Strategic beliefs (founding heuristics)\n" + "\n".join(lines)

@@ -47,6 +47,9 @@ class StrategicBelief(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String, default="active")
+    confidence: Mapped[float] = mapped_column(Float, default=0.8)
+    rationale: Mapped[str | None] = mapped_column(Text)
+    override_conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

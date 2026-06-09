@@ -3,6 +3,7 @@ from typing import Any
 
 from agents.base import _as_float
 from agents.board_modes import BoardMode, enforce_synthesis
+from llm.agent_models import resolve_board_agent_model
 from llm.openrouter import complete_json
 
 
@@ -36,12 +37,16 @@ risks, unknowns, assumptions, next_action, rationale.
 confidence and evidence_score: floats 0.0-1.0
 unknowns_level: high|moderate|low
 
+Beliefs are heuristics — not laws. Weigh override conditions before deferring to a belief.
+Weight the Researcher's evidence_for / evidence_against / evidence_gaps heavily.
+
 {mode_block}
 
 {beliefs_block}
 """
     user = json.dumps({"question": question, "agent_outputs": agent_outputs}, indent=2)[:14000]
-    raw = await complete_json(system, user)
+    model = resolve_board_agent_model("synthesizer")
+    raw = await complete_json(system, user, model=model)
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:

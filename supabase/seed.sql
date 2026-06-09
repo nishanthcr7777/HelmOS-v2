@@ -12,14 +12,21 @@ INSERT INTO projects (id, workspace_id, name, status) VALUES
   ('proj-nex-pilot', 'nexops', 'Pilot Onboarding', 'active')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO strategic_beliefs (workspace_id, content, sort_order) VALUES
-  ('clawback-labs', 'ICP = 200–1,500 employees', 1),
-  ('clawback-labs', 'Avoid enterprise first — no 5,000+ employee targets until 3 mid-market wins', 2),
-  ('clawback-labs', 'Revenue before perfection — ship outreach before full product polish', 3),
-  ('clawback-labs', 'Credibility over growth hacks — no fake case studies or inflated metrics', 4),
-  ('nexops', 'NexOps remains open source — core workflow engine stays MIT licensed', 1),
-  ('nexops', 'Guided onboarding beats self-serve for first 20 customers', 2),
-  ('nexops', 'BCH ecosystem is a distribution channel, not the product', 3)
+INSERT INTO strategic_beliefs (workspace_id, content, sort_order, confidence, rationale, override_conditions) VALUES
+  ('clawback-labs', 'ICP = 200–1,500 employees', 1, 0.85, 'Mid-market has faster procurement and compliance pain without enterprise bureaucracy', '[]'::jsonb),
+  (
+    'clawback-labs',
+    'Avoid enterprise first — no 5,000+ employee targets until 3 mid-market wins',
+    2,
+    0.8,
+    'Enterprise deals consume founder bandwidth and require SOC2/custom integrations before product maturity',
+    '["Revenue > 5x average deal", "No custom integrations", "Procurement < 45 days", "Strategic reference customer"]'::jsonb
+  ),
+  ('clawback-labs', 'Revenue before perfection — ship outreach before full product polish', 3, 0.75, 'Learning from live outreach beats internal polish', '[]'::jsonb),
+  ('clawback-labs', 'Credibility over growth hacks — no fake case studies or inflated metrics', 4, 0.9, 'Trust compounds; inflated claims destroy mid-market sales cycles', '[]'::jsonb),
+  ('nexops', 'NexOps remains open source — core workflow engine stays MIT licensed', 1, 0.95, 'Community trust is the distribution moat', '[]'::jsonb),
+  ('nexops', 'Guided onboarding beats self-serve for first 20 customers', 2, 0.8, 'Support playbook not ready for self-serve', '[]'::jsonb),
+  ('nexops', 'BCH ecosystem is a distribution channel, not the product', 3, 0.7, 'Partnerships accelerate reach without product coupling', '[]'::jsonb)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO workspace_profiles (workspace_id, metrics, context_lines) VALUES

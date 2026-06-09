@@ -3,6 +3,7 @@ from typing import Any
 
 from agents.board_modes import BoardMode, enforce_agent_output
 from agents.prompts import AGENT_ROLE_BLOCKS
+from llm.agent_models import resolve_board_agent_model
 from llm.openrouter import complete_json
 
 AGENT_NAMES = ["cto", "operator", "skeptic", "researcher", "sales_strategist"]
@@ -108,10 +109,15 @@ async def run_agent(
     context: str,
     beliefs_block: str,
     board_mode: BoardMode = "decision",
+    model: str | None = None,
 ) -> dict[str, Any]:
+    if agent_key == "researcher":
+        raise ValueError("Use run_researcher_agent() for the researcher role")
+
     system = build_system_prompt(agent_key, beliefs_block, board_mode)
     user = f"Question: {question}\n\nContext:\n{context[:12000]}"
-    raw = await complete_json(system, user)
+    resolved_model = model or resolve_board_agent_model(agent_key)
+    raw = await complete_json(system, user, model=resolved_model)
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
