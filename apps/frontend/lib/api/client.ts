@@ -117,6 +117,7 @@ export const api = {
 
 export async function streamChat(
   message: string,
+  workspaceId: string,
   onToken: (token: string) => void,
   onDone: (meta: {
     confidence?: number;
@@ -127,7 +128,7 @@ export async function streamChat(
   const res = await fetch(`${API_BASE}/chat/stream`, {
     method: "POST",
     headers: apiHeaders(),
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, workspace_id: workspaceId }),
   });
   if (!res.ok || !res.body) throw new Error("Stream failed");
 

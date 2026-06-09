@@ -11,7 +11,7 @@ import { streamChat } from "@/lib/api/client";
 import { EvidenceAccordion } from "@/components/shared/evidence-accordion";
 import { ConfidenceLabel } from "@/components/shared/confidence-label";
 import { useAppStore } from "@/lib/stores/app-store";
-import { suggestedPrompts } from "@/mocks/fixtures/data";
+import { suggestedPrompts } from "@/lib/suggested-prompts";
 import type { ChatMessage, EvidenceSource, MessageTag } from "@/lib/types";
 import { Square, Users } from "lucide-react";
 
@@ -47,6 +47,7 @@ export function ChatView() {
     try {
       await streamChat(
         text,
+        workspaceId,
         (token) => {
           full += token;
           setStreamContent(full);

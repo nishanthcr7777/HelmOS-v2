@@ -63,8 +63,8 @@ export function DecisionDetailView() {
         <section>
           <SynthesisPanel synthesis={synthesis} />
           <Button className="mt-4" variant="secondary" asChild>
-            <Link href={`/workspace/${workspaceId}/board?session=${decisionId.replace("decision-", "")}`}>
-              Open board report
+            <Link href={`/workspace/${workspaceId}/board`}>
+              New board review
             </Link>
           </Button>
         </section>

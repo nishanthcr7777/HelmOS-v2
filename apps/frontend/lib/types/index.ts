@@ -88,6 +88,7 @@ export interface BoardSession {
   project_id?: string;
   question: string;
   status: "running" | "complete";
+  decision_id?: string;
   agent_outputs: AgentOutput[];
   synthesis?: BoardSynthesis;
   created_at: string;

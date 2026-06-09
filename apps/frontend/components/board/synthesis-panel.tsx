@@ -2,8 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerdictBadge } from "@/components/shared/verdict-badge";
 import { ConfidenceBreakdown } from "@/components/shared/confidence-breakdown";
 import type { BoardSynthesis } from "@/lib/types";
+import { asStringList } from "@/lib/utils";
 
 export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
+  const risks = asStringList(synthesis.risks);
+  const unknowns = asStringList(synthesis.unknowns);
+  const assumptions = asStringList(synthesis.assumptions);
+
   return (
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader>
@@ -33,7 +38,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
           <div>
             <p className="text-xs font-semibold uppercase text-amber-600 dark:text-amber-400">Risks</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
-              {synthesis.risks.map((r, i) => (
+              {risks.map((r, i) => (
                 <li key={i}>{r}</li>
               ))}
             </ul>
@@ -41,7 +46,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
           <div>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Unknowns</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
-              {synthesis.unknowns.map((u, i) => (
+              {unknowns.map((u, i) => (
                 <li key={i}>{u}</li>
               ))}
             </ul>
@@ -49,7 +54,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
           <div>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Assumptions</p>
             <ul className="mt-1 list-inside list-disc text-muted-foreground">
-              {synthesis.assumptions.map((a, i) => (
+              {assumptions.map((a, i) => (
                 <li key={i}>{a}</li>
               ))}
             </ul>

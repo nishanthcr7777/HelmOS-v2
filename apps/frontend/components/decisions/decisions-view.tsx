@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Decision, DecisionStatus } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { Download } from "lucide-react";
-import { workspaces } from "@/mocks/fixtures/data";
+import { useWorkspaces, workspaceNameFrom } from "@/lib/hooks/use-workspaces";
 
 const statusFilters: (DecisionStatus | "")[] = ["", "open", "pursuing", "deferred", "rejected", "resolved"];
 
@@ -39,6 +39,7 @@ export function DecisionsView() {
   const workspaceId = params.workspaceId as string;
   const [statusFilter, setStatusFilter] = useState<DecisionStatus | "">("");
 
+  const { data: workspaces } = useWorkspaces();
   const { data: decisions = [], isLoading } = useQuery({
     queryKey: ["decisions", workspaceId, statusFilter],
     queryFn: () => api.getDecisions(workspaceId, statusFilter || undefined),
@@ -55,7 +56,7 @@ export function DecisionsView() {
     URL.revokeObjectURL(url);
   }
 
-  const wsName = (id: string) => workspaces.find((w) => w.id === id)?.name ?? id;
+  const wsName = (id: string) => workspaceNameFrom(workspaces, id);
 
   return (
     <div className="space-y-4 p-4 md:p-6">

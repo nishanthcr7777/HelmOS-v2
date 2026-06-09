@@ -10,7 +10,7 @@ import { VerdictBadge } from "@/components/shared/verdict-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { workspaces } from "@/mocks/fixtures/data";
+import { useWorkspaces, workspaceNameFrom } from "@/lib/hooks/use-workspaces";
 import {
   AlertTriangle,
   ArrowRight,
@@ -24,6 +24,7 @@ export function DashboardView() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
 
+  const { data: workspaces } = useWorkspaces();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api.getDashboard(),
@@ -33,7 +34,7 @@ export function DashboardView() {
     return <div className="p-6 text-muted-foreground">Loading mission brief…</div>;
   }
 
-  const wsName = (id: string) => workspaces.find((w) => w.id === id)?.name ?? id;
+  const wsName = (id: string) => workspaceNameFrom(workspaces, id);
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-6">

@@ -78,7 +78,7 @@ function InboxRow({
   onDismiss: () => void;
 }) {
   const boardHref = item.decision_id
-    ? `/workspace/${workspaceId}/board?session=${item.decision_id.replace("decision-", "")}`
+    ? `/workspace/${workspaceId}/decisions/${item.decision_id}`
     : `/workspace/${workspaceId}/board`;
 
   return (
