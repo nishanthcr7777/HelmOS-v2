@@ -25,7 +25,8 @@ async def chat_stream(body: ChatRequest, db: DbSession):
     beliefs_block = await beliefs_svc.pack_for_prompt(body.workspace_id)
 
     memory = MemoryService(db)
-    chunks = await memory.search(body.message, body.workspace_id, limit=8)
+    memory_result = await memory.search(body.message, body.workspace_id, limit=8)
+    chunks = memory_result.chunks
     memory_block = "\n".join(f"- [{c.chunk_type}] {c.content[:600]}" for c in chunks)
     evidence = [
         {

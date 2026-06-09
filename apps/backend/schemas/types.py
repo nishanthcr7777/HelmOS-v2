@@ -204,6 +204,7 @@ class BoardSessionOut(BaseModel):
     question: str
     status: str
     decision_id: str | None = None
+    board_mode: str | None = None
     agent_outputs: list[Any] = Field(default_factory=list)
     synthesis: dict[str, Any] | None = None
     created_at: str
@@ -212,8 +213,10 @@ class BoardSessionOut(BaseModel):
     def from_row(cls, row: Any) -> "BoardSessionOut":
         synthesis = row.synthesis
         decision_id = None
+        board_mode = None
         if isinstance(synthesis, dict):
             decision_id = synthesis.get("decision_id")
+            board_mode = synthesis.get("board_mode")
         return cls(
             id=str(row.id),
             workspace_id=row.workspace_id,
@@ -221,6 +224,7 @@ class BoardSessionOut(BaseModel):
             question=row.question,
             status=row.status,
             decision_id=str(decision_id) if decision_id else None,
+            board_mode=str(board_mode) if board_mode else None,
             agent_outputs=row.agent_outputs or [],
             synthesis=synthesis,
             created_at=_dt(row.created_at),

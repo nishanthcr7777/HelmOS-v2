@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
@@ -11,16 +12,25 @@ from schemas.types import BoardSessionOut
 
 router = APIRouter(prefix="/board", tags=["board"])
 
+BoardMode = Literal["exploration", "decision"]
+
 
 class BoardCreate(BaseModel):
     question: str
     workspace_id: str
     project_id: str | None = None
+    board_mode: BoardMode = "decision"
 
 
 @router.post("/sessions", status_code=201)
 async def create_session(body: BoardCreate, db: DbSession):
-    session = await run_board_session(db, body.workspace_id, body.question, body.project_id)
+    session = await run_board_session(
+        db,
+        body.workspace_id,
+        body.question,
+        body.project_id,
+        board_mode=body.board_mode,
+    )
     return BoardSessionOut.from_row(session)
 
 
