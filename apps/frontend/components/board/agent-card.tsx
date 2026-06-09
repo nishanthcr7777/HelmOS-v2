@@ -10,13 +10,17 @@ import type { AgentOutput } from "@/lib/types";
 import { AGENT_LABELS, researchAgeLabel } from "@/lib/agent-meta";
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { confidencePercent } from "@/lib/confidence";
+import type { BoardMode } from "@/lib/types";
 import { asStringList, cn } from "@/lib/utils";
 
 export function AgentCard({
   agent,
+  boardMode = "decision",
   loading,
 }: {
   agent: AgentOutput;
+  boardMode?: BoardMode;
   loading?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -33,13 +37,13 @@ export function AgentCard({
               {AGENT_LABELS[agent.agent] ?? agent.agent}
             </CardTitle>
             <p className="mt-1 text-xs tabular-nums text-muted-foreground">
-              Influence {Math.round(agent.influence_weight * 100)}%
+              Influence {confidencePercent(agent.influence_weight, 0.1)}%
             </p>
           </div>
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : (
-            <VerdictBadge verdict={agent.verdict} />
+            <VerdictBadge verdict={agent.verdict} boardMode={boardMode} />
           )}
         </div>
       </CardHeader>

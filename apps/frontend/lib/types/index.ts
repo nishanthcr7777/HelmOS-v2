@@ -69,8 +69,31 @@ export interface AgentOutput {
   suggested_next_action: string;
 }
 
+export type BoardMode = "exploration" | "decision";
+
+export interface ContextTraceMemory {
+  retrieved_chunks_count: number;
+  vector_hits: number;
+  text_hits: number;
+  used_text_fallback: boolean;
+  used_recent_fallback: boolean;
+  chunk_ids: string[];
+}
+
+export interface ContextTrace {
+  beliefs_count: number;
+  profile_lines_count: number;
+  entities_count: number;
+  decisions_injected: number;
+  board_sessions_injected: number;
+  memory: ContextTraceMemory;
+  agent_context_chars: number;
+  agent_context_tokens: number;
+}
+
 export interface BoardSynthesis {
   recommendation: string;
+  direct_answer?: string;
   verdict: Verdict;
   confidence: number;
   evidence_score: number;
@@ -80,6 +103,8 @@ export interface BoardSynthesis {
   assumptions: string[];
   next_action: string;
   rationale?: string;
+  board_mode?: BoardMode;
+  context_trace?: ContextTrace;
 }
 
 export interface BoardSession {
@@ -89,6 +114,7 @@ export interface BoardSession {
   question: string;
   status: "running" | "complete";
   decision_id?: string;
+  board_mode?: BoardMode;
   agent_outputs: AgentOutput[];
   synthesis?: BoardSynthesis;
   created_at: string;

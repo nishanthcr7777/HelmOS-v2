@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Verdict } from "@/lib/types";
+import type { BoardMode, Verdict } from "@/lib/types";
 
 const verdictStyles: Record<Verdict, string> = {
   go: "bg-verdict-go/20 text-verdict-go border-verdict-go/40",
@@ -11,7 +11,7 @@ const verdictStyles: Record<Verdict, string> = {
   needs_research: "bg-verdict-needs_research/20 text-verdict-needs_research border-verdict-needs_research/40",
 };
 
-const labels: Record<Verdict, string> = {
+const explorationLabels: Record<Verdict, string> = {
   go: "Go",
   no_go: "No Go",
   conditional: "Conditional",
@@ -20,10 +20,32 @@ const labels: Record<Verdict, string> = {
   needs_research: "Needs Research",
 };
 
-export function VerdictBadge({ verdict, className }: { verdict: Verdict; className?: string }) {
+const decisionLabels: Partial<Record<Verdict, string>> = {
+  go: "For",
+  lean_for: "For",
+  no_go: "Against",
+  lean_against: "Against",
+  conditional: "Conditional",
+  needs_research: "Needs Research",
+};
+
+export function VerdictBadge({
+  verdict,
+  boardMode = "exploration",
+  className,
+}: {
+  verdict: Verdict;
+  boardMode?: BoardMode;
+  className?: string;
+}) {
+  const label =
+    boardMode === "decision"
+      ? (decisionLabels[verdict] ?? "Conditional")
+      : explorationLabels[verdict];
+
   return (
     <Badge variant="outline" className={cn(verdictStyles[verdict], className)}>
-      {labels[verdict]}
+      {label}
     </Badge>
   );
 }

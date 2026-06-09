@@ -7,9 +7,12 @@ import { api } from "@/lib/api/client";
 import { useAppStore } from "@/lib/stores/app-store";
 import { AgentCard } from "./agent-card";
 import { AgentInfluenceBar } from "./agent-influence-bar";
+import { ContextTracePanel } from "./context-trace-panel";
 import { SynthesisPanel } from "./synthesis-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { BoardMode } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function BoardView() {
   const router = useRouter();
@@ -20,6 +23,7 @@ export function BoardView() {
   const prefill = useAppStore((s) => s.boardPrefillQuestion);
   const clearPrefill = useAppStore((s) => s.setBoardPrefillQuestion);
   const [question, setQuestion] = useState(prefill ?? "");
+  const [boardMode, setBoardMode] = useState<BoardMode>("decision");
   const [actionError, setActionError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -35,7 +39,8 @@ export function BoardView() {
   });
 
   const runBoard = useMutation({
-    mutationFn: () => api.createBoardSession({ question, workspace_id: workspaceId }),
+    mutationFn: () =>
+      api.createBoardSession({ question, workspace_id: workspaceId, board_mode: boardMode }),
     onSuccess: (data) => {
       clearPrefill(null);
       setActionError(null);
@@ -59,8 +64,10 @@ export function BoardView() {
   const pushBack = useMutation({
     mutationFn: () => {
       const recap = session?.synthesis?.recommendation ?? session?.question ?? question;
+      const mode = session?.board_mode ?? session?.synthesis?.board_mode ?? boardMode;
       return api.createBoardSession({
         workspace_id: workspaceId,
+        board_mode: mode,
         question: `Founder pushback — re-evaluate with extra skepticism: ${recap}`,
       });
     },
@@ -88,16 +95,45 @@ export function BoardView() {
         <p className="mt-1 text-sm text-muted-foreground">
           Adversarial intelligence report — weighted agent positions with evidence quality.
         </p>
-        <div className="mt-4 flex gap-2">
-          <Input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Strategic question for the board…"
-            className="max-w-xl"
-          />
-          <Button onClick={() => runBoard.mutate()} disabled={!question.trim() || runBoard.isPending}>
-            {runBoard.isPending ? "Running…" : "Run Board"}
-          </Button>
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Board mode
+            </span>
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              {(["decision", "exploration"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setBoardMode(mode)}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm capitalize transition-colors",
+                    boardMode === mode
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {boardMode === "decision"
+                ? "Agents must pick For / Against / Conditional"
+                : "Open analysis — needs research allowed"}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Strategic question for the board…"
+              className="max-w-xl"
+            />
+            <Button onClick={() => runBoard.mutate()} disabled={!question.trim() || runBoard.isPending}>
+              {runBoard.isPending ? "Running…" : "Run Board"}
+            </Button>
+          </div>
         </div>
         {actionError && <p className="mt-2 text-sm text-destructive">{actionError}</p>}
       </div>
@@ -130,11 +166,17 @@ export function BoardView() {
     );
   }
 
+  const sessionBoardMode =
+    session.board_mode ?? session.synthesis?.board_mode ?? "decision";
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-xl font-semibold">Board review</h1>
         <p className="mt-1 text-sm text-muted-foreground">{session.question}</p>
+        <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+          Mode: {sessionBoardMode}
+        </p>
       </div>
 
       <AgentInfluenceBar agents={session.agent_outputs} />
@@ -144,12 +186,15 @@ export function BoardView() {
           <AgentCard
             key={agent.agent}
             agent={agent}
+            boardMode={sessionBoardMode}
             loading={pushBack.isPending && agent.agent === "skeptic"}
           />
         ))}
       </div>
 
-      <SynthesisPanel synthesis={session.synthesis} />
+      <SynthesisPanel synthesis={session.synthesis} boardMode={sessionBoardMode} />
+
+      <ContextTracePanel trace={session.synthesis?.context_trace} />
 
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
         <Button

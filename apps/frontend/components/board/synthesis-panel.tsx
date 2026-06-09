@@ -1,10 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerdictBadge } from "@/components/shared/verdict-badge";
 import { ConfidenceBreakdown } from "@/components/shared/confidence-breakdown";
-import type { BoardSynthesis } from "@/lib/types";
+import type { BoardMode, BoardSynthesis } from "@/lib/types";
 import { asStringList } from "@/lib/utils";
 
-export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
+export function SynthesisPanel({
+  synthesis,
+  boardMode = "decision",
+}: {
+  synthesis: BoardSynthesis;
+  boardMode?: BoardMode;
+}) {
   const risks = asStringList(synthesis.risks);
   const unknowns = asStringList(synthesis.unknowns);
   const assumptions = asStringList(synthesis.assumptions);
@@ -14,7 +20,7 @@ export function SynthesisPanel({ synthesis }: { synthesis: BoardSynthesis }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm uppercase tracking-wide">Synthesis report</CardTitle>
-          <VerdictBadge verdict={synthesis.verdict} />
+          <VerdictBadge verdict={synthesis.verdict} boardMode={boardMode} />
         </div>
         <div className="mt-3 max-w-xs">
           <ConfidenceBreakdown

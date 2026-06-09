@@ -99,7 +99,11 @@ export const api = {
 
   getBoardSession: (id: string) => request<BoardSession>(`/board/sessions/${id}`),
 
-  createBoardSession: (body: { question: string; workspace_id: string }) =>
+  createBoardSession: (body: {
+    question: string;
+    workspace_id: string;
+    board_mode?: "exploration" | "decision";
+  }) =>
     request<BoardSession>("/board/sessions", {
       method: "POST",
       body: JSON.stringify(body),
