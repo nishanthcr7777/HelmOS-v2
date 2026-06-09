@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { API_BASE, apiAuthHeaders, apiHeaders } from "./config";
 import type {
   BoardSession,
   DashboardPayload,
@@ -17,10 +17,7 @@ import type {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers: apiHeaders(init?.headers),
   });
   if (!res.ok) throw new Error(`API error: ${res.status} ${path}`);
   return res.json() as Promise<T>;
@@ -68,7 +65,11 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     form.append("workspace_id", workspaceId);
-    const res = await fetch(`${API_BASE}/memory/ingest`, { method: "POST", body: form });
+    const res = await fetch(`${API_BASE}/memory/ingest`, {
+      method: "POST",
+      headers: apiAuthHeaders(),
+      body: form,
+    });
     if (!res.ok) throw new Error("Ingest failed");
     return res.json() as Promise<{ status: string; chunk_count: number }>;
   },
@@ -125,7 +126,7 @@ export async function streamChat(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/chat/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: apiHeaders(),
     body: JSON.stringify({ message }),
   });
   if (!res.ok || !res.body) throw new Error("Stream failed");

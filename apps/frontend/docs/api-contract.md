@@ -2,7 +2,7 @@
 
 Base URL: `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8000`)
 
-Auth: `Authorization: Bearer <HELMOS_API_KEY>` on all routes except `GET /health`. Leave `HELMOS_API_KEY` empty in local backend `.env` to skip auth during development.
+Auth: `Authorization: Bearer <HELMOS_API_KEY>` on all routes except `GET /health`. Frontend sends this via `NEXT_PUBLIC_HELMOS_API_KEY` (must match `HELMOS_API_KEY` in `apps/backend/.env`).
 
 Backend: FastAPI on Render · Data: Supabase PostgreSQL + Storage. See [docs/supabase-setup.md](../../../docs/supabase-setup.md) and [docs/render-deploy.md](../../../docs/render-deploy.md).
 
