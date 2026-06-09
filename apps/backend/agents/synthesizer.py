@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from agents.base import _as_str_list
 from llm.openrouter import complete_json
 
 
@@ -25,8 +26,8 @@ unknowns_level: high|moderate|low
     data.setdefault("confidence", 0.5)
     data.setdefault("evidence_score", 0.5)
     data.setdefault("unknowns_level", "moderate")
-    data.setdefault("risks", [])
-    data.setdefault("unknowns", [])
-    data.setdefault("assumptions", [])
+    data["risks"] = _as_str_list(data.get("risks", []))
+    data["unknowns"] = _as_str_list(data.get("unknowns", []))
+    data["assumptions"] = _as_str_list(data.get("assumptions", []))
     data.setdefault("next_action", "Review agent outputs and run research")
     return data

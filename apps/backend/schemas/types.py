@@ -203,20 +203,26 @@ class BoardSessionOut(BaseModel):
     project_id: str | None = None
     question: str
     status: str
+    decision_id: str | None = None
     agent_outputs: list[Any] = Field(default_factory=list)
     synthesis: dict[str, Any] | None = None
     created_at: str
 
     @classmethod
     def from_row(cls, row: Any) -> "BoardSessionOut":
+        synthesis = row.synthesis
+        decision_id = None
+        if isinstance(synthesis, dict):
+            decision_id = synthesis.get("decision_id")
         return cls(
             id=str(row.id),
             workspace_id=row.workspace_id,
             project_id=row.project_id,
             question=row.question,
             status=row.status,
+            decision_id=str(decision_id) if decision_id else None,
             agent_outputs=row.agent_outputs or [],
-            synthesis=row.synthesis,
+            synthesis=synthesis,
             created_at=_dt(row.created_at),
         )
 

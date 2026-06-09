@@ -8,6 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from agents.base import AGENT_NAMES, run_agent
 from agents.synthesizer import synthesize_board
 from beliefs.service import BeliefService
+
+
+def _as_float(value: object, default: float = 0.5) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
 from db.models import BoardSession, Decision, InboxItem
 from memory.retrieval import MemoryService
 
@@ -44,9 +51,7 @@ async def run_board_session(
 
     synthesis = await synthesize_board(question, outputs, beliefs_block)
     board.agent_outputs = outputs
-    board.synthesis = synthesis
     board.status = "complete"
-    await session.flush()
 
     decision = Decision(
         workspace_id=workspace_id,
@@ -55,8 +60,8 @@ async def run_board_session(
         question=question,
         synthesis=synthesis.get("recommendation", ""),
         verdict=synthesis.get("verdict"),
-        confidence=float(synthesis.get("confidence", 0.5)),
-        evidence_score=float(synthesis.get("evidence_score", 0.5)),
+        confidence=_as_float(synthesis.get("confidence"), 0.5),
+        evidence_score=_as_float(synthesis.get("evidence_score"), 0.5),
         risk_level="moderate",
         unknowns_level=synthesis.get("unknowns_level", "moderate"),
         agent_outputs=outputs,
@@ -76,6 +81,9 @@ async def run_board_session(
         ],
     )
     session.add(decision)
+    await session.flush()
+
+    board.synthesis = {**synthesis, "decision_id": str(decision.id)}
     await session.flush()
 
     if synthesis.get("verdict") in ("conditional", "needs_research", "lean_against"):
