@@ -188,7 +188,9 @@ async def build_board_context(
         },
         "agent_context_chars": agent_context_chars,
         "agent_context_tokens": agent_context_tokens,
-        "research_sources_count": (research_trace or {}).get("research_sources_count", 0),
+        "research_sources_count": (research_trace or {}).get(
+            "passed_to_researcher", (research_trace or {}).get("research_sources_count", 0)
+        ),
         "research": research_trace or {},
     }
 
