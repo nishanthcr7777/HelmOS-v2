@@ -86,10 +86,21 @@ export interface ContextTraceMemory {
 export interface ContextTraceResearch {
   research_sources_count?: number;
   tavily_hits?: number;
+  relevant_hits?: number;
+  passed_to_researcher?: number;
+  research_tokens?: number;
   firecrawl_pages?: number;
   queries?: string[];
   skipped_reason?: string | null;
+  retrieval_case?: "none" | "no_sources" | "no_relevant" | "has_relevant";
   source_urls?: string[];
+}
+
+export interface ContextTraceResearcher {
+  raw_response?: string;
+  parsed_response?: Record<string, unknown>;
+  parse_error?: string | null;
+  model?: string;
 }
 
 export interface ContextTrace {
@@ -103,6 +114,7 @@ export interface ContextTrace {
   agent_context_tokens: number;
   research_sources_count?: number;
   research?: ContextTraceResearch;
+  researcher?: ContextTraceResearcher;
 }
 
 export interface BoardSynthesis {

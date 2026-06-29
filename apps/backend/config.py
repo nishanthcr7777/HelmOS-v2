@@ -22,7 +22,10 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
 
     helmos_api_key: str = "dev-key"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:3001,"
+        "http://127.0.0.1:3000,http://127.0.0.1:3001"
+    )
     render_external_url: str = "http://localhost:8000"
 
     daily_spend_cap_usd: float = 5.0
