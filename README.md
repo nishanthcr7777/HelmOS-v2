@@ -49,6 +49,7 @@ Add `Authorization: Bearer <HELMOS_API_KEY>` in the frontend client.
 
 ## Docs
 
+- [UX handover](docs/ux-handover.md) — user flows, IA, pain points, and refactor guidance for UI/UX work
 - [API contract](apps/frontend/docs/api-contract.md)
 - [Supabase setup](docs/supabase-setup.md)
 - [Render deploy](docs/render-deploy.md)
