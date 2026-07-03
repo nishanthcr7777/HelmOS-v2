@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import get_settings
 from core.spend import check_spend_cap, record_spend
+from llm.langchain_client import complete_structured
 from llm.openrouter import complete_json, firecrawl_scrape, tavily_search
+from llm.schemas import EvidenceSummaries
 from research.query_generator import generate_research_queries
 from research.relevance import filter_relevant_results
 
@@ -82,12 +84,11 @@ def _format_packet_text(items: list[EvidenceItem], header: str = "") -> str:
     return "\n\n".join(lines)
 
 
-async def gather_board_evidence(
+async def init_evidence_packet(
     session: AsyncSession,
-    question: str,
     workspace_id: str,
-    workspace_context: str = "",
-) -> EvidencePacket:
+) -> EvidencePacket | None:
+    """Return None-equivalent early packet when research cannot run."""
     settings = get_settings()
     packet = EvidencePacket()
 
@@ -104,8 +105,19 @@ async def gather_board_evidence(
         packet.text = _format_packet_text([])
         return packet
 
-    packet.queries = await generate_research_queries(question, workspace_context)
+    return packet
 
+
+async def step_generate_queries(
+    packet: EvidencePacket,
+    question: str,
+    workspace_context: str,
+) -> EvidencePacket:
+    packet.queries = await generate_research_queries(question, workspace_context)
+    return packet
+
+
+async def step_tavily_search(packet: EvidencePacket) -> tuple[EvidencePacket, list[dict]]:
     all_results: list[dict] = []
     seen_urls: set[str] = set()
     for q in packet.queries:
@@ -120,14 +132,19 @@ async def gather_board_evidence(
                 break
         if len(all_results) >= _MAX_TAVILY_RAW:
             break
-
-    await record_spend(session, "board_research", 0.04)
     packet.tavily_hits = len(all_results)
+    return packet, all_results
 
+
+async def step_filter_relevant(
+    packet: EvidencePacket,
+    question: str,
+    all_results: list[dict],
+) -> tuple[EvidencePacket, list[dict]]:
     if packet.tavily_hits == 0:
         packet.retrieval_case = "no_sources"
         packet.text = "No external sources found."
-        return packet
+        return packet, []
 
     relevant_raw, relevant_count = filter_relevant_results(
         question, packet.queries, all_results, max_keep=_MAX_RELEVANT
@@ -142,17 +159,14 @@ async def gather_board_evidence(
             f"{packet.tavily_hits} sources retrieved from Tavily. "
             f"0 judged relevant to the question. Evidence gap remains."
         )
-        logger.info(
-            "board_evidence workspace=%s tavily=%d relevant=0",
-            workspace_id,
-            packet.tavily_hits,
-        )
-        return packet
+        return packet, []
 
     packet.retrieval_case = "has_relevant"
-    max_pages = min(settings.research_max_pages_per_session, 3)
-    items: list[EvidenceItem] = []
+    return packet, relevant_raw
 
+
+def _raw_to_items(relevant_raw: list[dict]) -> list[EvidenceItem]:
+    items: list[EvidenceItem] = []
     for r in relevant_raw:
         url = r.get("url", "")
         snippet = (r.get("content") or r.get("snippet") or "")[:500]
@@ -169,6 +183,18 @@ async def gather_board_evidence(
                 relevance_score=rel,
             )
         )
+    return items
+
+
+async def step_enrich_and_summarize(
+    session: AsyncSession,
+    packet: EvidencePacket,
+    question: str,
+    relevant_raw: list[dict],
+) -> EvidencePacket:
+    settings = get_settings()
+    max_pages = min(settings.research_max_pages_per_session, 3)
+    items = _raw_to_items(relevant_raw)
 
     if settings.firecrawl_api_key:
         for item in items[:max_pages]:
@@ -183,22 +209,35 @@ async def gather_board_evidence(
 
     if items and settings.openrouter_api_key:
         try:
-            summary_raw = await complete_json(
-                "Summarize each source into one factual sentence relevant to the founder question. "
-                'Return JSON: {"summaries": [{"url": "...", "summary": "..."}]}',
-                json.dumps(
-                    {
-                        "question": question[:500],
-                        "sources": [
-                            {"url": i.url, "title": i.title, "snippet": i.snippet} for i in items
-                        ],
-                    }
-                )[:8000],
+            summary_user = json.dumps(
+                {
+                    "question": question[:500],
+                    "sources": [
+                        {"url": i.url, "title": i.title, "snippet": i.snippet} for i in items
+                    ],
+                }
+            )[:8000]
+            summary_system = (
+                "Summarize each source into one factual sentence relevant to the founder question."
             )
-            parsed = json.loads(summary_raw)
-            url_to_summary = {
-                s.get("url", ""): s.get("summary", "") for s in parsed.get("summaries", [])
-            }
+            parsed_structured = await complete_structured(
+                summary_system, summary_user, EvidenceSummaries
+            )
+            url_to_summary: dict[str, str] = {}
+            if parsed_structured:
+                url_to_summary = {
+                    s.url: s.summary for s in parsed_structured.summaries if s.url and s.summary
+                }
+            else:
+                summary_raw = await complete_json(
+                    summary_system + ' Return JSON: {"summaries": [{"url": "...", "summary": "..."}]}',
+                    summary_user,
+                )
+                parsed = json.loads(summary_raw)
+                url_to_summary = {
+                    s.get("url", ""): s.get("summary", "")
+                    for s in parsed.get("summaries", [])
+                }
             for item in items:
                 if item.url in url_to_summary and url_to_summary[item.url]:
                     item.summary = url_to_summary[item.url]
@@ -210,6 +249,39 @@ async def gather_board_evidence(
     packet.passed_to_researcher = len(items)
     packet.text = _format_packet_text(items)
     packet.research_tokens = len(packet.text) // 4
+    return packet
+
+
+async def gather_board_evidence(
+    session: AsyncSession,
+    question: str,
+    workspace_id: str,
+    workspace_context: str = "",
+) -> EvidencePacket:
+    packet = await init_evidence_packet(session, workspace_id)
+    if packet is None:
+        return EvidencePacket()
+    if packet.skipped_reason:
+        return packet
+
+    packet = await step_generate_queries(packet, question, workspace_context)
+    packet, all_results = await step_tavily_search(packet)
+    await record_spend(session, "board_research", 0.04)
+
+    if packet.retrieval_case == "no_sources":
+        logger.info("board_evidence workspace=%s tavily=0", workspace_id)
+        return packet
+
+    packet, relevant_raw = await step_filter_relevant(packet, question, all_results)
+    if packet.retrieval_case == "no_relevant":
+        logger.info(
+            "board_evidence workspace=%s tavily=%d relevant=0",
+            workspace_id,
+            packet.tavily_hits,
+        )
+        return packet
+
+    packet = await step_enrich_and_summarize(session, packet, question, relevant_raw)
 
     logger.info(
         "board_evidence workspace=%s tavily=%d relevant=%d passed=%d tokens=%d",

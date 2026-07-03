@@ -4,7 +4,9 @@ from typing import Any
 from agents.base import _as_float, _as_str_list
 from agents.board_modes import BoardMode, enforce_agent_output
 from llm.agent_models import resolve_board_agent_model
+from llm.langchain_client import complete_structured
 from llm.openrouter import complete_json
+from llm.schemas import ResearcherLLMOutput
 from research.board_evidence import EvidencePacket
 
 RESEARCHER_SYSTEM = """You are the Researcher on a founder intelligence board.
@@ -115,13 +117,25 @@ Retrieval: tavily_hits={evidence.tavily_hits}, relevant_hits={evidence.relevant_
 
 {evidence.text[:14000]}
 """
-    raw = await complete_json(RESEARCHER_SYSTEM, user, model=model)
+    raw = ""
     parse_error: str | None = None
+    data: dict[str, Any] = {}
+
     try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        data = {}
+        structured = await complete_structured(RESEARCHER_SYSTEM, user, ResearcherLLMOutput, model=model)
+        if structured is not None:
+            data = structured.model_dump()
+            raw = json.dumps(data)
+    except (TypeError, ValueError) as exc:
         parse_error = str(exc)
+
+    if not data:
+        raw = await complete_json(RESEARCHER_SYSTEM, user, model=model)
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            data = {}
+            parse_error = str(exc)
 
     debug_trace = {
         "raw_response": raw[:20000] if raw else "",

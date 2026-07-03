@@ -1,3 +1,5 @@
+"""Board session orchestration — imperative path or LangGraph when enabled."""
+
 import asyncio
 import uuid
 from datetime import datetime, timezone
@@ -10,9 +12,11 @@ from agents.board_modes import BoardMode
 from agents.researcher import run_researcher_agent
 from agents.synthesizer import synthesize_board
 from beliefs.service import BeliefService
+from config import get_settings
 from db.models import BoardSession, Decision, InboxItem
 from memory.retrieval import MemoryService
 from orchestrator.context_builder import build_board_context
+from orchestrator.graphs.board_graph import run_board_session_graph
 from research.board_evidence import gather_board_evidence
 
 
@@ -26,7 +30,7 @@ def _as_float(value: object, default: float = 0.5) -> float:
         return default
 
 
-async def run_board_session(
+async def _run_board_session_imperative(
     session: AsyncSession,
     workspace_id: str,
     question: str,
@@ -154,3 +158,19 @@ async def run_board_session(
 
     await session.flush()
     return board
+
+
+async def run_board_session(
+    session: AsyncSession,
+    workspace_id: str,
+    question: str,
+    project_id: str | None = None,
+    board_mode: BoardMode = "decision",
+) -> BoardSession:
+    if get_settings().use_langgraph_board:
+        return await run_board_session_graph(
+            session, workspace_id, question, project_id, board_mode
+        )
+    return await _run_board_session_imperative(
+        session, workspace_id, question, project_id, board_mode
+    )
